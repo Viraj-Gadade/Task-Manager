@@ -5,10 +5,11 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Viraj",
+  "start": "node index.js",
+  "postinstall": "cd client && npm install && npm run build"
+}
+,
+  "author": "Codewave",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
