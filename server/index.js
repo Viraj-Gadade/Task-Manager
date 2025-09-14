@@ -10,16 +10,15 @@ import { dbConnection } from "./utils/connectDB.js";
 
 dotenv.config();
 
-// Connect to the database
+// Connect to database
 dbConnection();
 
-const PORT = process.env.PORT || 5000;
 const app = express();
 
-// CORS configuration
+// CORS
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:3001"], // adjust for frontend URL
+    origin: ["http://localhost:3000", "http://localhost:3001"],
     methods: ["GET", "POST", "DELETE", "PUT"],
     credentials: true,
   })
@@ -34,26 +33,24 @@ app.use(morgan("dev"));
 // API Routes
 app.use("/api", routes);
 
-// Serve React frontend in production
+// **Backend health check route**
+app.get("/", (req, res) => {
+  res.send("Backend is running!");
+});
+
+// Serve React frontend
 const __dirname = path.resolve();
 const clientBuildPath = path.join(__dirname, "client", "build");
+app.use(express.static(clientBuildPath));
 
-// Only serve frontend if build folder exists (avoids ENOENT on Vercel if not built)
-import fs from "fs";
-if (fs.existsSync(clientBuildPath)) {
-  app.use(express.static(clientBuildPath));
-
-  // For SPA routing, send index.html for all unmatched routes
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(clientBuildPath, "index.html"));
-  });
-} else {
-  console.warn("React build folder not found. Make sure you run `npm run build` in /client.");
-}
+// SPA fallback for all other routes (after `/` and `/api`)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(clientBuildPath, "index.html"));
+});
 
 // Error handling
 app.use(routeNotFound);
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+// **Vercel serverless export**
+export default app;
