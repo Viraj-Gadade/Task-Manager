@@ -10,7 +10,7 @@ import { dbConnection } from "./utils/connectDB.js";
 
 dotenv.config();
 
-// Connect to DB
+// Connect to the database
 dbConnection();
 
 const PORT = process.env.PORT || 5000;
@@ -19,7 +19,7 @@ const app = express();
 // CORS configuration
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:3001"], // adjust if needed
+    origin: ["http://localhost:3000", "http://localhost:3001"], // adjust for frontend URL
     methods: ["GET", "POST", "DELETE", "PUT"],
     credentials: true,
   })
@@ -36,15 +36,24 @@ app.use("/api", routes);
 
 // Serve React frontend in production
 const __dirname = path.resolve();
-app.use(express.static(path.join(__dirname, "client/build")));
+const clientBuildPath = path.join(__dirname, "client", "build");
 
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "client/build", "index.html"));
-});
+// Only serve frontend if build folder exists (avoids ENOENT on Vercel if not built)
+import fs from "fs";
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
 
-// Error handling middleware
+  // For SPA routing, send index.html for all unmatched routes
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(clientBuildPath, "index.html"));
+  });
+} else {
+  console.warn("React build folder not found. Make sure you run `npm run build` in /client.");
+}
+
+// Error handling
 app.use(routeNotFound);
 app.use(errorHandler);
 
 // Start server
-app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
+app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
